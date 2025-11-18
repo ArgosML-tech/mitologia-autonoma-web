@@ -1,3 +1,33 @@
+---
+/**
+ * Cargamos todos los archivos Markdown que estén en src/pages/mitologia/*.md
+ * y construimos una lista con su título, fecha y URL.
+ */
+const mitoModules = import.meta.glob('./mitologia/*.md');
+
+const mitos = await Promise.all(
+  Object.entries(mitoModules).map(async ([path, resolver]) => {
+    const post: any = await resolver();
+    const frontmatter = post.frontmatter ?? {};
+    const url = path
+      .replace('./mitologia', '/mitologia')
+      .replace('.md', '');
+
+    return {
+      url,
+      title: frontmatter.title ?? 'Mito sin título',
+      date: frontmatter.date ?? '',
+    };
+  })
+);
+
+// Ordenamos por fecha (más reciente primero)
+mitos.sort((a, b) => {
+  if (!a.date || !b.date) return 0;
+  return new Date(b.date).getTime() - new Date(a.date).getTime();
+});
+---
+
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -6,10 +36,33 @@
   <body>
     <main style="max-width: 720px; margin: 2rem auto; font-family: system-ui, sans-serif;">
       <h1>Mitos y relatos</h1>
-      <p>
-        Aquí aparecerán los mitos y relatos generados automáticamente por el sistema
-        de agentes. De momento, el archivo está en silencio.
-      </p>
+
+      {mitos.length === 0 ? (
+        <p>
+          Aquí aparecerán los mitos y relatos generados automáticamente por el sistema
+          de agentes. De momento, el archivo está en silencio.
+        </p>
+      ) : (
+        <>
+          <p>
+            Estos son los mitos registrados hasta ahora por el sistema de agentes.
+          </p>
+          <ul>
+            {mitos.map((mito) => (
+              <li style="margin-bottom: 0.5rem;">
+                <a href={mito.url}>
+                  {mito.title}
+                </a>
+                {mito.date && (
+                  <span style="color: #666; font-size: 0.9rem;">
+                    {' '}({mito.date})
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </main>
   </body>
 </html>
